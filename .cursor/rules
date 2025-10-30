@@ -1,0 +1,23 @@
+Project overview
+- UltimateTodoApp is a React Native (0.72) + TypeScript app using Redux Toolkit, redux-persist, React Navigation, and React Native Paper.
+- Entrypoints: `index.js`, `App.tsx`. State is in `src/store`, screens in `src/screens`, navigation in `src/navigation`.
+
+Docs to prefer
+- See `docs/ARCHITECTURE.md` for high-level design and data flow.
+- See `docs/STATE_MANAGEMENT.md` for Redux slices and conventions.
+- See `docs/SERVICES.md` for database and notifications services.
+- See `docs/ROUTES_AND_SCREENS.md` for navigation map.
+- See `docs/TESTING.md` for running and writing tests.
+
+Code style
+- TypeScript, explicit types on public APIs; avoid `any`.
+- Prefer pure functions and predictable reducers; mock side-effects in tests.
+- Use early returns and avoid deep nesting.
+
+Testing
+- Jest with react-test-renderer for component smoke tests and slice unit tests.
+- Place tests under `__tests__/` mirroring source structure where possible.
+
+Do nots
+- No runtime network dependencies in unit tests; mock services in `src/services`.
+- Do not import from native modules directly in tests; use mocks.

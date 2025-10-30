@@ -1,146 +1,251 @@
-import React, { useEffect } from 'react';
-import { StatusBar } from 'expo-status-bar';
-import { Provider as PaperProvider, DefaultTheme, MD3DarkTheme } from 'react-native-paper';
-import { Provider as ReduxProvider } from 'react-redux';
+import React, { useEffect, useState } from 'react';
+import { Alert, StatusBar, useColorScheme, View, StyleSheet } from 'react-native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { Provider as ReduxProvider, useSelector } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { Provider as PaperProvider, ActivityIndicator, Portal, Text } from 'react-native-paper';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useColorScheme } from 'react-native';
-import { store, persistor } from './src/store';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { store, persistor, RootState } from './src/store';
 import AppNavigator from './src/navigation/AppNavigator';
-import { useSelector } from 'react-redux';
-import { RootState } from './src/store';
-import * as Notifications from 'expo-notifications';
-import { databaseService, notificationService, locationService } from './src/services';
+import { databaseService } from './src/services/database';
+import { notificationService } from './src/services/notifications';
+import MCPService from './src/services/mcp/MCPService';
+import { lightTheme, darkTheme, getTheme, materialStyles } from './src/theme/MaterialTheme';
 
-// Configure notifications
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
-
-// Create React Query client
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      cacheTime: 1000 * 60 * 30, // 30 minutes
-    },
-  },
-});
-
-// Custom theme colors
-const lightTheme = {
+// Material Design 3.0 Navigation Theme
+const materialLightTheme = {
   ...DefaultTheme,
   colors: {
     ...DefaultTheme.colors,
-    primary: '#2196F3',
-    primaryContainer: '#e3f2fd',
-    secondary: '#03DAC6',
-    secondaryContainer: '#e0f7fa',
-    surface: '#ffffff',
-    surfaceVariant: '#f5f5f5',
-    background: '#fafafa',
-    error: '#f44336',
-    errorContainer: '#ffebee',
-    onPrimary: '#ffffff',
-    onSecondary: '#000000',
-    onSurface: '#000000',
-    onBackground: '#000000',
-    onError: '#ffffff',
+    primary: '#6750A4',
+    background: '#FFFBFE',
+    card: '#FFFBFE',
+    text: '#1C1B1F',
+    border: '#CAC4D0',
+    notification: '#D32F2F',
   },
 };
 
-const darkTheme = {
-  ...MD3DarkTheme,
+const materialDarkTheme = {
+  ...DarkTheme,
   colors: {
-    ...MD3DarkTheme.colors,
-    primary: '#64b5f6',
-    primaryContainer: '#1565c0',
-    secondary: '#4dd0e1',
-    secondaryContainer: '#00695c',
-    surface: '#121212',
-    surfaceVariant: '#1e1e1e',
-    background: '#000000',
-    error: '#ef5350',
-    errorContainer: '#b71c1c',
+    ...DarkTheme.colors,
+    primary: '#D0BCFF',
+    background: '#1C1B1F',
+    card: '#1C1B1F',
+    text: '#E6E1E5',
+    border: '#49454F',
+    notification: '#FFB4AB',
   },
 };
 
-function AppContent() {
+interface LoadingScreenProps {
+  theme: any;
+  message?: string;
+}
+
+const LoadingScreen: React.FC<LoadingScreenProps> = ({ theme, message = 'Loading...' }) => (
+  <View style={[styles.loadingContainer, { backgroundColor: theme.colors.background }]}>
+    <ActivityIndicator size="large" color={theme.colors.primary} />
+    <Text 
+      variant="bodyLarge" 
+      style={[styles.loadingText, { color: theme.colors.onBackground }]}
+    >
+      {message}
+    </Text>
+  </View>
+);
+
+const ErrorScreen: React.FC<{ theme: any; error: string; onRetry: () => void }> = ({ 
+  theme, 
+  error, 
+  onRetry 
+}) => (
+  <View style={[styles.errorContainer, { backgroundColor: theme.colors.background }]}>
+    <Text 
+      variant="headlineSmall" 
+      style={[styles.errorTitle, { color: theme.colors.error }]}
+    >
+      Oops! Something went wrong
+    </Text>
+    <Text 
+      variant="bodyMedium" 
+      style={[styles.errorMessage, { color: theme.colors.onBackground }]}
+    >
+      {error}
+    </Text>
+    <Text 
+      variant="labelLarge" 
+      style={[styles.retryButton, { color: theme.colors.primary }]}
+      onPress={onRetry}
+    >
+      Tap to retry
+    </Text>
+  </View>
+);
+
+const ThemedApp: React.FC = () => {
+  const settings = useSelector((state: RootState) => state.settings || { theme: 'system' });
   const systemColorScheme = useColorScheme();
-  const themePreference = useSelector((state: RootState) => state.settings.theme);
   
-  const getTheme = () => {
-    if (themePreference === 'auto') {
-      return systemColorScheme === 'dark' ? darkTheme : lightTheme;
+  const [isReady, setIsReady] = useState(false);
+  const [initializationError, setInitializationError] = useState<string | null>(null);
+  const [initializationStep, setInitializationStep] = useState('Starting...');
+  
+  // Determine theme based on settings
+  const isDarkMode = settings.theme === 'system' 
+    ? systemColorScheme === 'dark' 
+    : settings.theme === 'dark';
+  
+  const theme = getTheme(isDarkMode);
+  const navigationTheme = isDarkMode ? materialDarkTheme : materialLightTheme;
+
+  const initializeApp = async () => {
+    try {
+      setInitializationError(null);
+      setIsReady(false);
+      
+      console.log('🚀 Initializing Ultimate Todo App with Material Design 3.0...');
+      
+      // Initialize database service
+      setInitializationStep('Initializing database...');
+      await databaseService.initialize();
+      console.log('✅ Database service initialized');
+      
+      // Initialize notification service
+      setInitializationStep('Setting up notifications...');
+      await notificationService.initialize();
+      console.log('✅ Notification service initialized');
+      
+      // Initialize MCP (Model Context Protocol) service
+      setInitializationStep('Loading AI services...');
+      await MCPService.initialize();
+      console.log('✅ MCP service initialized');
+      
+      setInitializationStep('Finalizing setup...');
+      
+      // Small delay for smooth UX
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      console.log('🎉 All services initialized successfully');
+      setIsReady(true);
+    } catch (error) {
+      console.error('❌ Failed to initialize app services:', error);
+      setInitializationError('Failed to initialize app services. Please check your connection and try again.');
+      
+      // Show user-friendly error alert
+      Alert.alert(
+        'Initialization Error',
+        'The app failed to start properly. This might be due to a temporary issue.',
+        [
+          {
+            text: 'Retry',
+            onPress: () => initializeApp(),
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
     }
-    return themePreference === 'dark' ? darkTheme : lightTheme;
   };
 
   useEffect(() => {
-    // Initialize services
-    const initializeServices = async () => {
-      try {
-        // Initialize database
-        await databaseService.init();
-        console.log('Database initialized');
-
-        // Initialize notifications
-        const notificationPermissions = await notificationService.initialize();
-        if (notificationPermissions) {
-          console.log('Notifications initialized');
-        }
-
-        // Initialize location services
-        const locationPermissions = await locationService.initialize();
-        if (locationPermissions) {
-          console.log('Location services initialized');
-        }
-      } catch (error) {
-        console.error('Service initialization error:', error);
-      }
-    };
-
-    initializeServices();
-
-    // Set up notification listeners
-    const notificationListener = Notifications.addNotificationReceivedListener(notification => {
-      console.log('Notification received:', notification);
-    });
-
-    const responseListener = Notifications.addNotificationResponseReceivedListener(response => {
-      console.log('Notification response:', response);
-      notificationService.handleNotificationResponse(response);
-    });
-
-    return () => {
-      Notifications.removeNotificationSubscription(notificationListener);
-      Notifications.removeNotificationSubscription(responseListener);
-    };
+    initializeApp();
   }, []);
 
-  return (
-    <PaperProvider theme={getTheme()}>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <StatusBar style={getTheme() === darkTheme ? 'light' : 'dark'} />
-        <AppNavigator />
-      </GestureHandlerRootView>
-    </PaperProvider>
-  );
-}
+  if (initializationError) {
+    return (
+      <ErrorScreen 
+        theme={theme} 
+        error={initializationError} 
+        onRetry={initializeApp}
+      />
+    );
+  }
 
-export default function App() {
+  if (!isReady) {
+    return (
+      <LoadingScreen 
+        theme={theme} 
+        message={initializationStep}
+      />
+    );
+  }
+
   return (
-    <ReduxProvider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
-        <QueryClientProvider client={queryClient}>
-          <AppContent />
-        </QueryClientProvider>
-      </PersistGate>
-    </ReduxProvider>
+    <Portal.Host>
+      <StatusBar
+        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
+        backgroundColor={theme.colors.surface}
+        translucent={false}
+      />
+      <NavigationContainer theme={navigationTheme}>
+        <AppNavigator />
+      </NavigationContainer>
+    </Portal.Host>
   );
-}
+};
+
+const App: React.FC = () => {
+  return (
+    <GestureHandlerRootView style={styles.container}>
+      <SafeAreaProvider>
+        <ReduxProvider store={store}>
+          <PersistGate 
+            loading={
+              <LoadingScreen 
+                theme={lightTheme} 
+                message="Restoring your data..."
+              />
+            } 
+            persistor={persistor}
+          >
+            <PaperProvider theme={lightTheme}>
+              <ThemedApp />
+            </PaperProvider>
+          </PersistGate>
+        </ReduxProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: materialStyles.spacing.xl,
+  },
+  loadingText: {
+    marginTop: materialStyles.spacing.md,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: materialStyles.spacing.xl,
+  },
+  errorTitle: {
+    textAlign: 'center',
+    marginBottom: materialStyles.spacing.md,
+  },
+  errorMessage: {
+    textAlign: 'center',
+    marginBottom: materialStyles.spacing.lg,
+  },
+  retryButton: {
+    textAlign: 'center',
+    textDecorationLine: 'underline',
+  },
+});
+
+export default App;

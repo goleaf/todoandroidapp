@@ -1,0 +1,12 @@
+# ninja log v5
+1	5	0	/www/wwwroot/todoandroidapp/android/app/.cxx/Debug/6l3ba4x5/arm64-v8a/CMakeFiles/cmake.verify_globs	ee30f88eb2c8c591
+3522	3559	1757108390797078578	/www/wwwroot/todoandroidapp/android/app/build/intermediates/cxx/Debug/6l3ba4x5/obj/arm64-v8a/libappmodules.so	326068781f274118
+4	92	1757109932895577541	build.ninja	c4547e6d1b89c309
+0	3197	1757108390424074142	CMakeFiles/appmodules.dir/www/wwwroot/todoandroidapp/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	9cb1a17aa7c0b508
+0	3522	1757108390750078019	CMakeFiles/appmodules.dir/OnLoad.cpp.o	f5cf434cdf003503
+0	18	0	clean	2d2f43cf2094d251
+0	5	0	/www/wwwroot/todoandroidapp/android/app/.cxx/Debug/6l3ba4x5/arm64-v8a/CMakeFiles/cmake.verify_globs	ee30f88eb2c8c591
+6	4455	1757109937399628219	CMakeFiles/appmodules.dir/www/wwwroot/todoandroidapp/android/app/build/generated/autolinking/src/main/jni/autolinking.cpp.o	9cb1a17aa7c0b508
+6	4744	1757109937686631448	CMakeFiles/appmodules.dir/OnLoad.cpp.o	f5cf434cdf003503
+4744	4781	1757109937736632011	/www/wwwroot/todoandroidapp/android/app/build/intermediates/cxx/Debug/6l3ba4x5/obj/arm64-v8a/libappmodules.so	326068781f274118
+1	5	0	/www/wwwroot/todoandroidapp/android/app/.cxx/Debug/6l3ba4x5/arm64-v8a/CMakeFiles/cmake.verify_globs	ee30f88eb2c8c591

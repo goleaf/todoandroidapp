@@ -3,28 +3,20 @@ import { persistStore, persistReducer } from 'redux-persist';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { combineReducers } from '@reduxjs/toolkit';
 
-import todoSlice from './slices/todoSlice';
-import categorySlice from './slices/categorySlice';
+import tasksSlice from './slices/tasksSlice';
+import categoriesSlice from './slices/categoriesSlice';
 import settingsSlice from './slices/settingsSlice';
-import analyticsSlice from './slices/analyticsSlice';
-import goalSlice from './slices/goalSlice';
-import userSlice from './slices/userSlice';
-import collaborationSlice from './slices/collaborationSlice';
 
 const persistConfig = {
   key: 'root',
   storage: AsyncStorage,
-  whitelist: ['todos', 'categories', 'settings', 'goals', 'user'], // Only persist these reducers
+  whitelist: ['settings'], // Only persist settings
 };
 
 const rootReducer = combineReducers({
-  todos: todoSlice,
-  categories: categorySlice,
+  tasks: tasksSlice,
+  categories: categoriesSlice,
   settings: settingsSlice,
-  analytics: analyticsSlice,
-  goals: goalSlice,
-  user: userSlice,
-  collaboration: collaborationSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);
