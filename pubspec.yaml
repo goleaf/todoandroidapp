@@ -1,0 +1,45 @@
+name: universal_todo_app
+description: A universal TODO application for iOS, Android, and Web (PWA)
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # State management
+  flutter_riverpod: ^2.5.0
+
+  # Navigation
+  go_router: ^14.0.0
+
+  # Storage
+  shared_preferences: ^2.2.0
+
+  # Internationalization
+  intl: ^0.19.0
+
+  # HTTP client
+  http: ^1.2.0
+
+  # Configuration
+  flutter_dotenv: ^5.1.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  generate: true
+
+  uses-material-design: true
+
+  assets:
+    - .env
+

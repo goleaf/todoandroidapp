@@ -1,0 +1,164 @@
+{
+  "@@locale": "en",
+  "appTitle": "Universal TODO App",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "addTask": "Add Task",
+  "@addTask": {
+    "description": "Button to add a new task"
+  },
+  "editTask": "Edit Task",
+  "@editTask": {
+    "description": "Button to edit a task"
+  },
+  "deleteTask": "Delete Task",
+  "@deleteTask": {
+    "description": "Button to delete a task"
+  },
+  "confirmDelete": "Are you sure you want to delete this task?",
+  "@confirmDelete": {
+    "description": "Confirmation message for task deletion"
+  },
+  "filterAll": "All",
+  "@filterAll": {
+    "description": "Filter to show all tasks"
+  },
+  "filterActive": "Active",
+  "@filterActive": {
+    "description": "Filter to show active tasks"
+  },
+  "filterCompleted": "Completed",
+  "@filterCompleted": {
+    "description": "Filter to show completed tasks"
+  },
+  "priorityLow": "Low",
+  "@priorityLow": {
+    "description": "Low priority label"
+  },
+  "priorityMedium": "Medium",
+  "@priorityMedium": {
+    "description": "Medium priority label"
+  },
+  "priorityHigh": "High",
+  "@priorityHigh": {
+    "description": "High priority label"
+  },
+  "themeLight": "Light",
+  "@themeLight": {
+    "description": "Light theme option"
+  },
+  "themeDark": "Dark",
+  "@themeDark": {
+    "description": "Dark theme option"
+  },
+  "themeSystem": "System",
+  "@themeSystem": {
+    "description": "System theme option"
+  },
+  "languageEnglish": "English",
+  "@languageEnglish": {
+    "description": "English language option"
+  },
+  "languageRussian": "Русский",
+  "@languageRussian": {
+    "description": "Russian language option"
+  },
+  "languageSystem": "System",
+  "@languageSystem": {
+    "description": "System language option"
+  },
+  "export": "Export JSON",
+  "@export": {
+    "description": "Button to export tasks to clipboard"
+  },
+  "exportSuccess": "Tasks exported to clipboard",
+  "@exportSuccess": {
+    "description": "Success message for export"
+  },
+  "import": "Import JSON",
+  "@import": {
+    "description": "Button to import tasks from clipboard"
+  },
+  "importSuccess": "Tasks imported successfully",
+  "@importSuccess": {
+    "description": "Success message for import"
+  },
+  "importConfirm": "This will replace all current tasks. Continue?",
+  "@importConfirm": {
+    "description": "Confirmation message for import"
+  },
+  "importFailed": "Failed to import tasks. Please check the JSON format.",
+  "@importFailed": {
+    "description": "Error message for import failure"
+  },
+  "settings": "Settings",
+  "@settings": {
+    "description": "Settings page title"
+  },
+  "title": "Title",
+  "@title": {
+    "description": "Task title field label"
+  },
+  "description": "Description",
+  "@description": {
+    "description": "Task description field label"
+  },
+  "dueDate": "Due Date",
+  "@dueDate": {
+    "description": "Due date field label"
+  },
+  "priority": "Priority",
+  "@priority": {
+    "description": "Priority field label"
+  },
+  "selectDate": "Select Date",
+  "@selectDate": {
+    "description": "Date picker button"
+  },
+  "save": "Save",
+  "@save": {
+    "description": "Save button"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel button"
+  },
+  "emptyTasks": "No tasks yet",
+  "@emptyTasks": {
+    "description": "Empty state message"
+  },
+  "emptyTasksDescription": "Add a task to get started",
+  "@emptyTasksDescription": {
+    "description": "Empty state description"
+  },
+  "emptyFiltered": "No tasks match your filters",
+  "@emptyFiltered": {
+    "description": "Empty filtered results message"
+  },
+  "search": "Search...",
+  "@search": {
+    "description": "Search placeholder"
+  },
+  "sortBy": "Sort By",
+  "@sortBy": {
+    "description": "Sort dropdown label"
+  },
+  "sortDueDate": "Due Date",
+  "@sortDueDate": {
+    "description": "Sort by due date"
+  },
+  "sortPriority": "Priority",
+  "@sortPriority": {
+    "description": "Sort by priority"
+  },
+  "sortCreated": "Created",
+  "@sortCreated": {
+    "description": "Sort by created date"
+  },
+  "titleRequired": "Title is required",
+  "@titleRequired": {
+    "description": "Validation error for empty title"
+  }
+}
+

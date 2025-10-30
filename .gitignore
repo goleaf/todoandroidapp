@@ -1,51 +1,49 @@
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-package-lock.json
+# Flutter/Dart/Pub related
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
 
-# React Native
-.expo/
-.expo-shared/
+# Related to Materialize
+.materialize/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio / IntelliJ IDEA (This is the old one, kept for compatibility)
+.idea/
 *.iml
-*.hprof
 
-# Android
-android/.gradle/
-android/app/build/
-android/build/
-mobile/android/.gradle/
-mobile/android/app/build/
-mobile/android/build/
-*.keystore
-*.jks
+# VS Code related
+.vscode/
 
-# iOS
-ios/build/
-ios/Pods/
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
 
-# Bundler/Metro
-dist/
-build/
+# Screenshots
+screenshots/
+*.png
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*.local
+*.pem
 
 # Logs
 *.log
 
-# OS
-.DS_Store
-Thumbs.db
-
-# IDE
-.idea/
-.vscode/
-
 # Coverage
 coverage/
-
-# Misc
-*.apk
-*.ipa
-**/outputs/
-**/intermediates/
-**/tmp/

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <base href="$FLUTTER_BASE_HREF">
+
+  <meta charset="UTF-8">
+  <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+  <meta name="description" content="Universal TODO application for iOS, Android, and Web">
+
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="TODO App">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <link rel="icon" type="image/png" href="icons/icon-192.png"/>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#6750A4">
+
+  <link rel="manifest" href="manifest.json">
+
+  <title>Universal TODO App</title>
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    var serviceWorkerVersion = null;
+    var serviceWorkerReg = null;
+    var isUpdateAvailable = false;
+
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('flutter-first-frame', function () {
+        navigator.serviceWorker.register('flutter_service_worker.js?v=' + serviceWorkerVersion)
+          .then(function (reg) {
+            serviceWorkerReg = reg;
+            reg.addEventListener('updatefound', function () {
+              var installingWorker = reg.installing;
+              installingWorker.addEventListener('statechange', function () {
+                if (installingWorker.state === 'installed') {
+                  if (navigator.serviceWorker.controller) {
+                    isUpdateAvailable = true;
+                  }
+                }
+              });
+            });
+          });
+      });
+    }
+  </script>
+  <script src="flutter.js" defer></script>
+</head>
+<body>
+  <script>
+    window.addEventListener('load', function(ev) {
+      _flutter.loader.loadEntrypoint({
+        serviceWorker: {
+          serviceWorkerVersion: serviceWorkerVersion,
+        },
+        onEntrypointLoaded: function(engineInitializer) {
+          engineInitializer.initializeEngine().then(function(appRunner) {
+            appRunner.runApp();
+          });
+        }
+      });
+    });
+  </script>
+</body>
+</html>
+
