@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:universal_todo_app/features/todos/domain/todo.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
+import 'package:universal_todo_app/features/todos/domain/models/priority.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
 
 class TaskEditor extends StatefulWidget {
   final Todo? initialTodo;
   final VoidCallback onCancel;
-  final Function(Todo) onSave;
+  final Future<void> Function(Todo) onSave;
 
   const TaskEditor({
     super.key,
@@ -59,7 +60,7 @@ class _TaskEditorState extends State<TaskEditor> {
     }
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (_formKey.currentState!.validate()) {
       final todo = Todo(
         id: widget.initialTodo?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
@@ -74,7 +75,7 @@ class _TaskEditorState extends State<TaskEditor> {
         updatedAt: DateTime.now(),
       );
       
-      widget.onSave(todo);
+      await widget.onSave(todo);
     }
   }
 
@@ -119,7 +120,7 @@ class _TaskEditorState extends State<TaskEditor> {
             items: Priority.values.map((priority) {
               return DropdownMenuItem(
                 value: priority,
-                child: Text(priority.getDisplayName(l10n)),
+                child: Text(priority.displayName),
               );
             }).toList(),
             onChanged: (value) {
@@ -155,7 +156,7 @@ class _TaskEditorState extends State<TaskEditor> {
               ),
               const SizedBox(width: 16),
               ElevatedButton(
-                onPressed: _save,
+                onPressed: () async => await _save(),
                 child: Text(l10n.save),
               ),
             ],

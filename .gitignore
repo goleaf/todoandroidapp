@@ -7,6 +7,20 @@
 .pub/
 /build/
 
+# FVM (Flutter Version Management)
+.fvm/
+
+# Generated files
+*.g.dart
+*.freezed.dart
+*.drift.dart
+lib/**/generated/
+
+# Environment files
+.env
+.env.*.local
+*.pem
+
 # Related to Materialize
 .materialize/
 

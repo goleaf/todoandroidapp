@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo_sort.dart';
 
 class Toolbar extends ConsumerStatefulWidget {
   const Toolbar({super.key});
@@ -23,7 +24,7 @@ class _ToolbarState extends ConsumerState<Toolbar> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final sortMode = ref.watch(sortModeProvider);
+    final sortMode = ref.watch(todoSortProvider);
 
     return Column(
       children: [
@@ -71,13 +72,13 @@ class _ToolbarState extends ConsumerState<Toolbar> {
               onSelected: (value) {
                 switch (value) {
                   case 'dueDate':
-                    ref.read(sortModeProvider.notifier).state = SortMode.dueDate;
+                    ref.read(todoSortProvider.notifier).state = TodoSort.dueDate;
                     break;
                   case 'priority':
-                    ref.read(sortModeProvider.notifier).state = SortMode.priority;
+                    ref.read(todoSortProvider.notifier).state = TodoSort.priority;
                     break;
                   case 'created':
-                    ref.read(sortModeProvider.notifier).state = SortMode.createdAt;
+                    ref.read(todoSortProvider.notifier).state = TodoSort.createdAt;
                     break;
                 }
               },
@@ -86,9 +87,9 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                   value: 'dueDate',
                   child: Row(
                     children: [
-                      if (sortMode == SortMode.dueDate)
+                      if (sortMode == TodoSort.dueDate)
                         const Icon(Icons.check, size: 20),
-                      if (sortMode == SortMode.dueDate) const SizedBox(width: 8),
+                      if (sortMode == TodoSort.dueDate) const SizedBox(width: 8),
                       Text(l10n.sortDueDate),
                     ],
                   ),
@@ -97,9 +98,9 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                   value: 'priority',
                   child: Row(
                     children: [
-                      if (sortMode == SortMode.priority)
+                      if (sortMode == TodoSort.priority)
                         const Icon(Icons.check, size: 20),
-                      if (sortMode == SortMode.priority) const SizedBox(width: 8),
+                      if (sortMode == TodoSort.priority) const SizedBox(width: 8),
                       Text(l10n.sortPriority),
                     ],
                   ),
@@ -108,9 +109,9 @@ class _ToolbarState extends ConsumerState<Toolbar> {
                   value: 'created',
                   child: Row(
                     children: [
-                      if (sortMode == SortMode.createdAt)
+                      if (sortMode == TodoSort.createdAt)
                         const Icon(Icons.check, size: 20),
-                      if (sortMode == SortMode.createdAt) const SizedBox(width: 8),
+                      if (sortMode == TodoSort.createdAt) const SizedBox(width: 8),
                       Text(l10n.sortCreated),
                     ],
                   ),

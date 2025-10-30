@@ -1,222 +1,290 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:universal_todo_app/features/todos/data/todo_repository.dart';
-import 'package:universal_todo_app/features/todos/domain/todo.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
+import 'package:universal_todo_app/features/todos/data/repositories/drift_todo_repository.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
+import 'package:universal_todo_app/features/todos/domain/models/priority.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo_filter.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo_sort.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 
 void main() {
-  group('TodosProvider', () {
-    late ProviderContainer container;
+  group('TodosProviders', () {
+    late AppDatabase database;
 
-    setUp(() {
-      SharedPreferences.setMockInitialValues({});
-      container = ProviderContainer();
+    setUp(() async {
+      database = AppDatabase(createInMemoryDatabase());
     });
 
-    tearDown(() {
+    tearDown(() async {
+      await database.close();
+    });
+
+    test('todoFilterProvider starts with all filter', () {
+      final container = ProviderContainer();
+      final filter = container.read(todoFilterProvider);
+      container.dispose();
+      expect(filter, TodoFilter.all);
+    });
+
+    test('todoSortProvider starts with createdAt sort', () {
+      final container = ProviderContainer();
+      final sort = container.read(todoSortProvider);
+      container.dispose();
+      expect(sort, TodoSort.createdAt);
+    });
+
+    test('todoActionsProvider can add and retrieve todo', () async {
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+        ],
+      );
+
+      final actions = container.read(todoActionsProvider);
+      final todo = Todo.create(
+        title: 'Test Todo',
+        priority: Priority.high,
+      );
+
+      await actions.addTodo(todo);
+
+      final todosAsync = container.read(displayedTodosProvider);
+      final todos = await todosAsync.value;
+
+      expect(todos, isNotNull);
+      expect(todos!.length, 1);
+      expect(todos.first.title, 'Test Todo');
+      expect(todos.first.priority, Priority.high);
+
       container.dispose();
     });
 
-    test('should start with empty todos', () {
-      final todos = container.read(todosProvider);
-      expect(todos, isEmpty);
-    });
-
-    test('should add todo', () async {
-      final notifier = container.read(todosProvider.notifier);
-      final todo = Todo(
-        id: '1',
-        title: 'Test',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+    test('todoActionsProvider can update todo', () async {
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+        ],
       );
 
-      await notifier.addTodo(todo);
+      final actions = container.read(todoActionsProvider);
+      final todo = Todo.create(title: 'Original');
 
-      final todos = container.read(todosProvider);
-      expect(todos.length, 1);
-      expect(todos.first.title, 'Test');
-    });
+      final id = await actions.addTodo(todo);
+      final retrieved = await container.read(todoRepositoryProvider).getTodoById(id);
 
-    test('should update todo', () async {
-      final notifier = container.read(todosProvider.notifier);
-      final todo = Todo(
-        id: '1',
-        title: 'Original',
-        createdAt: DateTime.now(),
+      expect(retrieved, isNotNull);
+
+      final updated = retrieved!.copyWith(
+        title: 'Updated',
         updatedAt: DateTime.now(),
       );
+      await actions.updateTodo(updated);
 
-      await notifier.addTodo(todo);
-      
-      final updated = todo.copyWith(title: 'Updated');
-      await notifier.updateTodo(updated);
+      final todosAsync = container.read(displayedTodosProvider);
+      final todos = await todosAsync.value;
 
-      final todos = container.read(todosProvider);
+      expect(todos, isNotNull);
+      expect(todos!.length, 1);
       expect(todos.first.title, 'Updated');
+
+      container.dispose();
     });
 
-    test('should delete todo', () async {
-      final notifier = container.read(todosProvider.notifier);
-      final todo1 = Todo(
-        id: '1',
-        title: 'Todo 1',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
-      final todo2 = Todo(
-        id: '2',
-        title: 'Todo 2',
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+    test('todoActionsProvider can delete todo', () async {
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+        ],
       );
 
-      await notifier.addTodo(todo1);
-      await notifier.addTodo(todo2);
-      await notifier.deleteTodo('1');
+      final actions = container.read(todoActionsProvider);
+      final todo1 = Todo.create(title: 'Todo 1');
+      final todo2 = Todo.create(title: 'Todo 2');
 
-      final todos = container.read(todosProvider);
-      expect(todos.length, 1);
-      expect(todos.first.id, '2');
+      final id1 = await actions.addTodo(todo1);
+      await actions.addTodo(todo2);
+      await actions.deleteTodo(id1);
+
+      final todosAsync = container.read(displayedTodosProvider);
+      final todos = await todosAsync.value;
+
+      expect(todos, isNotNull);
+      expect(todos!.length, 1);
+      expect(todos.first.title, 'Todo 2');
+
+      container.dispose();
     });
 
-    test('should toggle todo completion', () async {
-      final notifier = container.read(todosProvider.notifier);
-      final todo = Todo(
-        id: '1',
-        title: 'Test',
-        completed: false,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+    test('todoActionsProvider can toggle todo completion', () async {
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+        ],
       );
 
-      await notifier.addTodo(todo);
-      await notifier.toggleTodo('1');
+      final actions = container.read(todoActionsProvider);
+      final todo = Todo.create(title: 'Test');
 
-      final todos = container.read(todosProvider);
-      expect(todos.first.completed, true);
+      final id = await actions.addTodo(todo);
+      await actions.toggleTodo(id);
+
+      final todosAsync = container.read(displayedTodosProvider);
+      final todos = await todosAsync.value;
+
+      expect(todos, isNotNull);
+      expect(todos!.first.completed, true);
+
+      container.dispose();
     });
 
     group('Filtering', () {
+      late ProviderContainer container;
+
       setUp(() async {
-        final notifier = container.read(todosProvider.notifier);
-        await notifier.addTodo(Todo(
-          id: '1',
-          title: 'Active 1',
-          completed: false,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
-        await notifier.addTodo(Todo(
-          id: '2',
-          title: 'Active 2',
-          completed: false,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
-        await notifier.addTodo(Todo(
-          id: '3',
-          title: 'Completed 1',
-          completed: true,
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
-        ));
+        container = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+          ],
+        );
+
+        final actions = container.read(todoActionsProvider);
+        await actions.addTodo(Todo.create(title: 'Active 1'));
+        await actions.addTodo(Todo.create(title: 'Active 2'));
+        
+        final completed = Todo.create(title: 'Completed 1', completed: true);
+        await actions.addTodo(completed);
+        await actions.toggleTodo(completed.id);
       });
 
-      test('should filter all todos', () {
+      tearDown(() {
+        container.dispose();
+      });
+
+      test('should filter all todos', () async {
         container.read(todoFilterProvider.notifier).state = TodoFilter.all;
         final filtered = container.read(filteredTodosProvider);
-        expect(filtered.length, 3);
+        final todos = await filtered.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.length, 3);
       });
 
-      test('should filter active todos', () {
+      test('should filter active todos', () async {
         container.read(todoFilterProvider.notifier).state = TodoFilter.active;
         final filtered = container.read(filteredTodosProvider);
-        expect(filtered.length, 2);
-        expect(filtered.every((t) => !t.completed), true);
+        final todos = await filtered.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.length, 2);
+        expect(todos!.every((t) => !t.completed), true);
       });
 
-      test('should filter completed todos', () {
+      test('should filter completed todos', () async {
         container.read(todoFilterProvider.notifier).state = TodoFilter.completed;
         final filtered = container.read(filteredTodosProvider);
-        expect(filtered.length, 1);
-        expect(filtered.first.completed, true);
+        final todos = await filtered.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.length, 1);
+        expect(todos!.first.completed, true);
       });
     });
 
     group('Search', () {
+      late ProviderContainer container;
+
       setUp(() async {
-        final notifier = container.read(todosProvider.notifier);
-        await notifier.addTodo(Todo(
-          id: '1',
+        container = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+          ],
+        );
+
+        final actions = container.read(todoActionsProvider);
+        await actions.addTodo(Todo.create(
           title: 'Flutter is great',
           description: 'Mobile app framework',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
         ));
-        await notifier.addTodo(Todo(
-          id: '2',
+        await actions.addTodo(Todo.create(
           title: 'React is nice',
           description: 'Web framework',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
         ));
       });
 
-      test('should search by title', () {
-        container.read(searchQueryProvider.notifier).state = 'Flutter';
-        final results = container.read(searchedAndSortedTodosProvider);
-        expect(results.length, 1);
-        expect(results.first.title, 'Flutter is great');
+      tearDown(() {
+        container.dispose();
       });
 
-      test('should search by description', () {
+      test('should search by title', () async {
+        container.read(searchQueryProvider.notifier).state = 'Flutter';
+        final results = container.read(displayedTodosProvider);
+        final todos = await results.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.length, 1);
+        expect(todos!.first.title, 'Flutter is great');
+      });
+
+      test('should search by description', () async {
         container.read(searchQueryProvider.notifier).state = 'Mobile';
-        final results = container.read(searchedAndSortedTodosProvider);
-        expect(results.length, 1);
-        expect(results.first.description, 'Mobile app framework');
+        final results = container.read(displayedTodosProvider);
+        final todos = await results.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.length, 1);
+        expect(todos!.first.description, 'Mobile app framework');
       });
     });
 
     group('Sorting', () {
+      late ProviderContainer container;
+
       setUp() async {
-        final notifier = container.read(todosProvider.notifier);
-        await notifier.addTodo(Todo(
-          id: '3',
+        container = ProviderContainer(
+          overrides: [
+            appDatabaseProvider.overrideWithValue(database),
+          ],
+        );
+
+        final actions = container.read(todoActionsProvider);
+        await actions.addTodo(Todo.create(
           title: 'Last',
           createdAt: DateTime.now().subtract(const Duration(days: 1)),
-          updatedAt: DateTime.now(),
         ));
-        await notifier.addTodo(Todo(
-          id: '1',
+        await actions.addTodo(Todo.create(
           title: 'First',
-          createdAt: DateTime.now(),
-          updatedAt: DateTime.now(),
         ));
-        await notifier.addTodo(Todo(
-          id: '2',
+        await actions.addTodo(Todo.create(
           title: 'Middle',
           priority: Priority.high,
           createdAt: DateTime.now().subtract(const Duration(hours: 1)),
-          updatedAt: DateTime.now(),
         ));
+      }
+
+      tearDown() {
+        container.dispose();
+      }
+
+      test('should sort by created date descending', () async {
+        container.read(todoSortProvider.notifier).state = TodoSort.createdAt;
+        final sorted = container.read(displayedTodosProvider);
+        final todos = await sorted.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.first.title, 'First');
+        expect(todos!.last.title, 'Last');
       });
 
-      test('should sort by created date descending', () {
-        container.read(sortModeProvider.notifier).state = SortMode.createdAt;
-        final sorted = container.read(searchedAndSortedTodosProvider);
-        expect(sorted.first.id, '1');
-        expect(sorted.last.id, '3');
-      });
-
-      test('should sort by priority', () {
-        container.read(sortModeProvider.notifier).state = SortMode.priority;
-        final sorted = container.read(searchedAndSortedTodosProvider);
-        expect(sorted.first.id, '2');
-        expect(sorted.first.priority, Priority.high);
+      test('should sort by priority', () async {
+        container.read(todoSortProvider.notifier).state = TodoSort.priority;
+        final sorted = container.read(displayedTodosProvider);
+        final todos = await sorted.value;
+        
+        expect(todos, isNotNull);
+        expect(todos!.first.title, 'Middle');
+        expect(todos!.first.priority, Priority.high);
       });
     });
   });
 }
-

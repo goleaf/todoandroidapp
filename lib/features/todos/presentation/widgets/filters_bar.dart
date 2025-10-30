@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo_filter.dart';
 
 class FiltersBar extends ConsumerWidget {
   const FiltersBar({super.key});

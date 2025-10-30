@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/task_editor.dart';
+import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
 
 class TodoDetailsPage extends ConsumerStatefulWidget {
   final String taskId;
@@ -18,19 +19,20 @@ class TodoDetailsPage extends ConsumerStatefulWidget {
 }
 
 class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
-  void _saveTodo(Todo todo) {
+  Future<void> _saveTodo(Todo todo) async {
+    final actions = ref.read(todoActionsProvider);
     if (widget.taskId == 'new') {
-      ref.read(todosProvider.notifier).addTodo(todo);
+      await actions.addTodo(todo);
     } else {
-      ref.read(todosProvider.notifier).updateTodo(todo);
+      await actions.updateTodo(todo);
     }
     if (mounted) {
       context.pop();
     }
   }
 
-  void _deleteTodo(String id) {
-    ref.read(todosProvider.notifier).deleteTodo(id);
+  Future<void> _deleteTodo(String id) async {
+    await ref.read(todoActionsProvider).deleteTodo(id);
     if (mounted) {
       context.pop();
     }
@@ -66,20 +68,8 @@ class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final todos = ref.watch(todosProvider);
+    final todosAsync = ref.watch(todosStreamProvider);
     final isNew = widget.taskId == 'new';
-    
-    Todo? initialTodo;
-    if (!isNew) {
-      try {
-        initialTodo = todos.firstWhere((t) => t.id == widget.taskId);
-      } catch (e) {
-        // Task not found, navigate back
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          context.pop();
-        });
-      }
-    }
 
     return Scaffold(
       appBar: AppBar(
@@ -94,12 +84,45 @@ class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
               ]
             : null,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: TaskEditor(
-          initialTodo: initialTodo,
-          onCancel: () => context.pop(),
-          onSave: _saveTodo,
+      body: todosAsync.when(
+        data: (todos) {
+          Todo? initialTodo;
+          if (!isNew) {
+            try {
+              initialTodo = todos.firstWhere((t) => t.id == widget.taskId);
+            } catch (e) {
+              // Task not found, navigate back
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                context.pop();
+              });
+              return const Center(child: CircularProgressIndicator());
+            }
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: TaskEditor(
+              initialTodo: initialTodo,
+              onCancel: () => context.pop(),
+              onSave: _saveTodo,
+            ),
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stack) => Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48),
+              const SizedBox(height: 16),
+              Text('Error: $error'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => context.pop(),
+                child: const Text('Back'),
+              ),
+            ],
+          ),
         ),
       ),
     );

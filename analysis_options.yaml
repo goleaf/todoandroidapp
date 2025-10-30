@@ -2,20 +2,52 @@ include: package:flutter_lints/flutter.yaml
 
 linter:
   rules:
+    # Style
     - prefer_const_constructors
+    - prefer_const_constructors_in_immutables
     - prefer_const_literals_to_create_immutables
-    - avoid_print
     - prefer_single_quotes
+    - prefer_const_declarations
+    - require_trailing_commas
+    
+    # Errors
+    - avoid_print
+    - avoid_relative_lib_imports
+    - avoid_types_as_parameter_names
+    
+    # Good practices
     - always_declare_return_types
+    - always_require_non_null_named_parameters
     - avoid_unnecessary_containers
+    - avoid_redundant_argument_values
     - prefer_final_fields
     - prefer_final_locals
+    - prefer_final_in_for_each
     - prefer_if_null_operators
+    - use_key_in_widget_constructors
+    
+    # Documentation
+    - public_member_api_docs
+    
+    # Complexity
+    - library_names
+    - prefer_is_empty
+    - prefer_is_not_empty
 
 analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "**/*.drift.dart"
+    - "**/generated/**"
+    - "**/build/**"
+  
   errors:
     invalid_annotation_target: ignore
+    todo: ignore
+    deprecated_member_use_from_same_package: ignore
+    
+  strong-mode:
+    implicit-casts: false
+    implicit-dynamic: false
 

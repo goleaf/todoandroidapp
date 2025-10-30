@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 
-import '../../domain/todo.dart';
+import '../../domain/models/todo.dart';
+import '../../domain/models/priority.dart';
 
 class TaskItem extends ConsumerWidget {
   final Todo todo;
@@ -30,7 +31,7 @@ class TaskItem extends ConsumerWidget {
               Checkbox(
                 value: todo.completed,
                 onChanged: (_) {
-                  ref.read(todosProvider.notifier).toggleTodo(todo.id);
+                  ref.read(todoActionsProvider).toggleTodo(todo.id);
                 },
               ),
               Expanded(
@@ -104,7 +105,7 @@ class _PriorityChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Chip(
       label: Text(
-        priority.getDisplayName(l10n),
+        priority.displayName,
         style: const TextStyle(fontSize: 12),
       ),
       backgroundColor: _color.withOpacity(0.1),

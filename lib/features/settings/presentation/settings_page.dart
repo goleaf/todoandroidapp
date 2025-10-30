@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/services/clipboard/json_clipboard.dart';
-import 'package:universal_todo_app/state/auth_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 import 'package:universal_todo_app/state/settings_provider.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
 
 class SettingsPage extends ConsumerStatefulWidget {
   const SettingsPage({super.key});
@@ -18,14 +16,13 @@ class SettingsPage extends ConsumerStatefulWidget {
 class _SettingsPageState extends ConsumerState<SettingsPage> {
   Future<void> _exportTasks() async {
     try {
-      final todos = ref.read(todosProvider);
-      await JsonClipboardService.exportToClipboard(todos);
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tasks exported to clipboard')),
-        );
-      }
+      final todosAsync = ref.read(todosStreamProvider);
+      await todosAsync.whenData((todos) async {
+        final actions = ref.read(todoActionsProvider);
+        final jsonString = await actions.exportToJson();
+        
+        await Share.share(jsonString, subject: 'Todos Export');
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -37,48 +34,36 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
   Future<void> _importTasks() async {
     try {
-      final clipboardData = await Clipboard.getData('text/plain');
-      if (clipboardData?.text == null || clipboardData!.text!.isEmpty) {
-        _showMessage('Clipboard is empty');
-        return;
-      }
-
-      final confirm = await showDialog<bool>(
-        context: context,
-        builder: (context) {
-          final l10n = AppLocalizations.of(context);
-          return AlertDialog(
-            title: const Text('Import JSON'),
-            content: Text(l10n.importConfirm),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(false),
-                child: Text(l10n.cancel),
-              ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text('Import'),
-              ),
-            ],
-          );
-        },
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
       );
 
-      if (confirm == true) {
-        final todos = await JsonClipboardService.importFromClipboard(clipboardData.text!);
-        
-        if (todos != null && todos.isNotEmpty) {
-          // Clear and add new todos
-          ref.read(todosProvider.notifier).clearAll();
-          for (final todo in todos) {
-            await ref.read(todosProvider.notifier).addTodo(todo);
-          }
-          
-          if (mounted) {
-            _showMessage('Tasks imported successfully');
-          }
-        } else {
-          _showMessage('Failed to import tasks');
+      if (result != null && result.files.single.path != null) {
+        final confirm = await showDialog<bool>(
+          context: context,
+          builder: (context) {
+            final l10n = AppLocalizations.of(context);
+            return AlertDialog(
+              title: const Text('Import JSON'),
+              content: Text(l10n.importConfirm),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(false),
+                  child: Text(l10n.cancel),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  child: const Text('Import'),
+                ),
+              ],
+            );
+          },
+        );
+
+        if (confirm == true) {
+          // TODO: Read file and import
+          _showMessage('Import functionality will be added');
         }
       }
     } catch (e) {
@@ -90,33 +75,6 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
-  }
-
-  Future<void> _logout() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Logout'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirm == true) {
-      await ref.read(authProvider.notifier).logout();
-      if (mounted) {
-        context.go('/login');
-      }
-    }
   }
 
   @override
@@ -210,12 +168,19 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
           const Divider(),
 
-          // Account Section
-          _SectionTitle(title: 'Account'),
+          // Actions Section
+          _SectionTitle(title: 'Actions'),
           ListTile(
-            leading: const Icon(Icons.logout),
-            title: const Text('Logout'),
-            onTap: _logout,
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('Clear Completed'),
+            onTap: () async {
+              await ref.read(todoActionsProvider).deleteCompleted();
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Completed tasks deleted')),
+                );
+              }
+            },
           ),
         ],
       ),

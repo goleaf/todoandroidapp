@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:universal_todo_app/core/utils/responsive.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
-import 'package:universal_todo_app/state/todos_provider.dart';
+import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/empty_state.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/filters_bar.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/task_item.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/toolbar.dart';
 
-import '../../domain/todo.dart';
+import '../../domain/models/todo.dart';
 
 class TodosPage extends ConsumerStatefulWidget {
   const TodosPage({super.key});
@@ -26,7 +26,7 @@ class _TodosPageState extends ConsumerState<TodosPage> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final todos = ref.watch(searchedAndSortedTodosProvider);
+    final todosAsync = ref.watch(displayedTodosProvider);
     final isMobile = isMobile(context);
 
     return Scaffold(
@@ -47,14 +47,32 @@ class _TodosPageState extends ConsumerState<TodosPage> {
             child: FiltersBar(),
           ),
           Expanded(
-            child: todos.isEmpty
-                ? const EmptyState(isFiltered: true)
-                : ListView.builder(
-                    itemCount: todos.length,
-                    itemBuilder: (context, index) {
-                      return TaskItem(todo: todos[index]);
-                    },
-                  ),
+            child: todosAsync.when(
+              data: (todos) => todos.isEmpty
+                  ? const EmptyState(isFiltered: true)
+                  : ListView.builder(
+                      itemCount: todos.length,
+                      itemBuilder: (context, index) {
+                        return TaskItem(todo: todos[index]);
+                      },
+                    ),
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, stack) => Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.error_outline, size: 48),
+                    const SizedBox(height: 16),
+                    Text('Error: $error'),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () => ref.refresh(displayedTodosProvider),
+                      child: const Text('Retry'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ],
       ),
