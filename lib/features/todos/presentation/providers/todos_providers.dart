@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
 import 'package:universal_todo_app/features/todos/data/repositories/drift_todo_repository.dart';
-import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
 import 'package:universal_todo_app/features/todos/domain/models/todo_filter.dart';
 import 'package:universal_todo_app/features/todos/domain/models/todo_sort.dart';
 import 'package:universal_todo_app/features/todos/domain/repositories/todo_repository.dart';
@@ -71,14 +70,26 @@ final displayedTodosProvider = Provider<AsyncValue<List<Todo>>>((ref) {
             if (b.dueDate == null) return -1;
             return a.dueDate!.compareTo(b.dueDate!);
           case TodoSort.priority:
-            return b.priority.sortValue.compareTo(a.priority.sortValue);
+            return _getPrioritySortValue(b.priority).compareTo(_getPrioritySortValue(a.priority));
         }
       });
 
       return results;
     },
   );
-});
+}
+
+int _getPrioritySortValue(String priority) {
+  switch (priority) {
+    case 'low':
+      return 0;
+    case 'high':
+      return 2;
+    case 'medium':
+    default:
+      return 1;
+  }
+}
 
 /// Todo actions provider
 final todoActionsProvider = Provider<TodoActions>((ref) {
@@ -100,11 +111,11 @@ class TodoActions {
     await _repository.updateTodo(todo);
   }
 
-  Future<void> deleteTodo(String id) async {
+  Future<void> deleteTodo(int id) async {
     await _repository.deleteTodo(id);
   }
 
-  Future<void> toggleTodo(String id) async {
+  Future<void> toggleTodo(int id) async {
     await _repository.toggleTodo(id);
   }
 

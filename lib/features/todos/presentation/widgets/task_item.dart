@@ -4,9 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
 import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
-
-import '../../domain/models/todo.dart';
-import '../../domain/models/priority.dart';
+import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
 
 class TaskItem extends ConsumerWidget {
   final Todo todo;
@@ -67,7 +65,7 @@ class TaskItem extends ConsumerWidget {
                       spacing: 8,
                       children: [
                         _PriorityChip(priority: todo.priority, l10n: l10n),
-                        if (todo.dueDate != null) _DueDateChip(dueDate: todo.dueDate!),
+                        if (todo.dueDate != null) _DueDateChip(dueDate: todo.dueDate),
                       ],
                     ),
                   ],
@@ -82,7 +80,7 @@ class TaskItem extends ConsumerWidget {
 }
 
 class _PriorityChip extends StatelessWidget {
-  final Priority priority;
+  final String priority;
   final AppLocalizations l10n;
 
   const _PriorityChip({
@@ -92,12 +90,25 @@ class _PriorityChip extends StatelessWidget {
 
   Color get _color {
     switch (priority) {
-      case Priority.low:
+      case 'low':
         return Colors.green;
-      case Priority.medium:
-        return Colors.orange;
-      case Priority.high:
+      case 'high':
         return Colors.red;
+      case 'medium':
+      default:
+        return Colors.orange;
+    }
+  }
+  
+  String get _displayName {
+    switch (priority) {
+      case 'low':
+        return l10n.priorityLow;
+      case 'high':
+        return l10n.priorityHigh;
+      case 'medium':
+      default:
+        return l10n.priorityMedium;
     }
   }
 
@@ -105,7 +116,7 @@ class _PriorityChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Chip(
       label: Text(
-        priority.displayName,
+        _displayName,
         style: const TextStyle(fontSize: 12),
       ),
       backgroundColor: _color.withOpacity(0.1),
@@ -117,7 +128,7 @@ class _PriorityChip extends StatelessWidget {
 }
 
 class _DueDateChip extends StatelessWidget {
-  final DateTime dueDate;
+  final int dueDate;
 
   const _DueDateChip({
     required this.dueDate,
@@ -125,8 +136,9 @@ class _DueDateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final dueDateTime = DateTime.fromMillisecondsSinceEpoch(dueDate);
     final now = DateTime.now();
-    final isOverdue = dueDate.isBefore(now) && dueDate.day < now.day;
+    final isOverdue = dueDateTime.isBefore(now) && dueDateTime.day < now.day;
     
     return Chip(
       label: Row(
@@ -139,7 +151,7 @@ class _DueDateChip extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            DateFormat('MMM dd, yyyy').format(dueDate),
+            DateFormat('MMM dd, yyyy').format(dueDateTime),
             style: TextStyle(
               fontSize: 12,
               color: isOverdue ? Colors.red : null,

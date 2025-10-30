@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
 import 'package:universal_todo_app/features/todos/presentation/providers/todos_providers.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/task_editor.dart';
-import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
+import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
 
 class TodoDetailsPage extends ConsumerStatefulWidget {
   final String taskId;
@@ -31,7 +31,7 @@ class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
     }
   }
 
-  Future<void> _deleteTodo(String id) async {
+  Future<void> _deleteTodo(int id) async {
     await ref.read(todoActionsProvider).deleteTodo(id);
     if (mounted) {
       context.pop();
@@ -61,7 +61,10 @@ class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
     );
 
     if (confirmed == true && mounted) {
-      _deleteTodo(id);
+      final idInt = int.tryParse(id);
+      if (idInt != null) {
+        _deleteTodo(idInt);
+      }
     }
   }
 
@@ -89,9 +92,17 @@ class _TodoDetailsPageState extends ConsumerState<TodoDetailsPage> {
           Todo? initialTodo;
           if (!isNew) {
             try {
-              initialTodo = todos.firstWhere((t) => t.id == widget.taskId);
+              final taskIdInt = int.tryParse(widget.taskId);
+              if (taskIdInt != null) {
+                initialTodo = todos.firstWhere((t) => t.id == taskIdInt);
+              } else {
+                initialTodo = null;
+              }
             } catch (e) {
-              // Task not found, navigate back
+              initialTodo = null;
+            }
+            
+            if (initialTodo == null) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 context.pop();
               });

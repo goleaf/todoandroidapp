@@ -9,8 +9,6 @@ import 'package:universal_todo_app/features/todos/presentation/widgets/filters_b
 import 'package:universal_todo_app/features/todos/presentation/widgets/task_item.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/toolbar.dart';
 
-import '../../domain/models/todo.dart';
-
 class TodosPage extends ConsumerStatefulWidget {
   const TodosPage({super.key});
 

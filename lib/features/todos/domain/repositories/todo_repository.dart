@@ -1,4 +1,4 @@
-import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
+import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
 
 /// Repository interface for todo operations
 /// Implementations should provide:
@@ -13,19 +13,19 @@ abstract class TodoRepository {
   Future<List<Todo>> getAllTodos();
 
   /// Get a single todo by ID
-  Future<Todo?> getTodoById(String id);
+  Future<Todo?> getTodoById(int id);
 
   /// Create a new todo
-  Future<String> createTodo(Todo todo);
+  Future<int> createTodo(Todo todo);
 
   /// Update an existing todo
   Future<void> updateTodo(Todo todo);
 
   /// Delete a todo
-  Future<void> deleteTodo(String id);
+  Future<void> deleteTodo(int id);
 
   /// Toggle completion status
-  Future<void> toggleTodo(String id);
+  Future<void> toggleTodo(int id);
 
   /// Delete completed todos
   Future<int> deleteCompleted();
@@ -37,4 +37,3 @@ abstract class TodoRepository {
   /// Returns number of imported todos
   Future<int> importFromJson(String json);
 }
-

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
-import 'package:universal_todo_app/features/todos/domain/models/priority.dart';
+import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
 import 'package:universal_todo_app/generated/l10n/app_localizations.dart';
 
 class TaskEditor extends StatefulWidget {
@@ -23,8 +22,8 @@ class TaskEditor extends StatefulWidget {
 class _TaskEditorState extends State<TaskEditor> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  late Priority _priority;
-  DateTime? _dueDate;
+  late String _priority;
+  int? _dueDate;
   final _formKey = GlobalKey<FormState>();
 
   @override
@@ -34,7 +33,7 @@ class _TaskEditorState extends State<TaskEditor> {
     _descriptionController = TextEditingController(
       text: widget.initialTodo?.description ?? '',
     );
-    _priority = widget.initialTodo?.priority ?? Priority.medium;
+    _priority = widget.initialTodo?.priority ?? 'medium';
     _dueDate = widget.initialTodo?.dueDate;
   }
 
@@ -46,16 +45,18 @@ class _TaskEditorState extends State<TaskEditor> {
   }
 
   Future<void> _selectDate() async {
+    final now = DateTime.now();
+    final initialDate = _dueDate != null ? DateTime.fromMillisecondsSinceEpoch(_dueDate!) : now;
     final picked = await showDatePicker(
       context: context,
-      initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
+      initialDate: initialDate,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
     );
     
     if (picked != null) {
       setState(() {
-        _dueDate = picked;
+        _dueDate = picked.millisecondsSinceEpoch;
       });
     }
   }

@@ -1,10 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:drift/drift.dart';
-import 'package:universal_todo_app/features/todos/domain/models/todo.dart';
 import 'package:universal_todo_app/features/todos/domain/repositories/todo_repository.dart';
 import 'package:universal_todo_app/features/todos/data/database/app_database.dart';
-import 'package:universal_todo_app/features/todos/data/mappers/todo_mapper.dart';
 
 /// Drift implementation of TodoRepository
 class DriftTodoRepository implements TodoRepository {
@@ -14,61 +12,62 @@ class DriftTodoRepository implements TodoRepository {
 
   @override
   Stream<List<Todo>> watchTodos() {
-    return _db.watchAllTodos().map(
-      (rows) => rows.map((row) => TodoMapper.fromDb(row)).toList(),
-    );
+    return _db.watchAllTodos();
   }
 
   @override
   Future<List<Todo>> getAllTodos() async {
-    final rows = await (_db.select(_db.todos)
-          ..orderBy([(t) => OrderingTerm.desc(t.createdAt)]))
-        .get();
-    return rows.map((row) => TodoMapper.fromDb(row)).toList();
+    return await _db.watchAllTodos().first;
   }
 
   @override
-  Future<Todo?> getTodoById(String id) async {
-    final dbId = int.tryParse(id);
-    if (dbId == null) return null;
-
-    final row = await (_db.select(_db.todos)..where((t) => t.id.equals(dbId)))
+  Future<Todo?> getTodoById(int id) async {
+    final row = await (_db.select(_db.todos)..where((t) => t.id.equals(id)))
         .getSingleOrNull();
-    return row != null ? TodoMapper.fromDb(row) : null;
+    return row;
   }
 
   @override
-  Future<String> createTodo(Todo todo) async {
-    final companion = TodoMapper.toDb(todo);
-    final insertedRow = await _db.into(_db.todos).insert(companion);
-    return insertedRow.toString();
+  Future<int> createTodo(Todo todo) async {
+    final companion = TodosCompanion.insert(
+      title: todo.title,
+      description: Value(todo.description),
+      dueDate: Value(todo.dueDate),
+      priority: todo.priority,
+      completed: todo.completed,
+      createdAt: todo.createdAt,
+      updatedAt: todo.updatedAt,
+    );
+    return await _db.into(_db.todos).insert(companion);
   }
 
   @override
   Future<void> updateTodo(Todo todo) async {
-    final dbId = int.tryParse(todo.id);
-    if (dbId == null) throw Exception('Invalid todo ID: ${todo.id}');
-
-    final companion = TodoMapper.toDbUpdate(todo);
-    await (_db.update(_db.todos)..where((t) => t.id.equals(dbId))).write(companion);
+    final companion = TodosCompanion(
+      title: Value(todo.title),
+      description: Value(todo.description),
+      dueDate: Value(todo.dueDate),
+      priority: Value(todo.priority),
+      completed: Value(todo.completed),
+      updatedAt: Value(todo.updatedAt),
+    );
+    await (_db.update(_db.todos)..where((t) => t.id.equals(todo.id))).write(companion);
   }
 
   @override
-  Future<void> deleteTodo(String id) async {
-    final dbId = int.tryParse(id);
-    if (dbId == null) return;
-
-    await (_db.delete(_db.todos)..where((t) => t.id.equals(dbId))).go();
+  Future<void> deleteTodo(int id) async {
+    await (_db.delete(_db.todos)..where((t) => t.id.equals(id))).go();
   }
 
   @override
-  Future<void> toggleTodo(String id) async {
+  Future<void> toggleTodo(int id) async {
     final todo = await getTodoById(id);
     if (todo == null) return;
 
+    final now = DateTime.now().millisecondsSinceEpoch;
     final updated = todo.copyWith(
       completed: !todo.completed,
-      updatedAt: DateTime.now(),
+      updatedAt: now,
     );
     await updateTodo(updated);
   }
@@ -96,7 +95,6 @@ class DriftTodoRepository implements TodoRepository {
     try {
       final json = jsonDecode(jsonString) as Map<String, dynamic>;
       
-      // Validate schema version
       final version = json['version'] as String?;
       if (version != '1.0') {
         throw Exception('Unsupported schema version: $version');
@@ -105,7 +103,6 @@ class DriftTodoRepository implements TodoRepository {
       final todosList = json['todos'] as List;
       int imported = 0;
 
-      // Use transaction for atomic import
       await _db.transaction(() async {
         for (final todoJson in todosList) {
           try {
@@ -113,7 +110,6 @@ class DriftTodoRepository implements TodoRepository {
             await createTodo(todo);
             imported++;
           } catch (e) {
-            // Skip invalid todos but continue importing
             print('Error importing todo: $e');
           }
         }
@@ -125,4 +121,3 @@ class DriftTodoRepository implements TodoRepository {
     }
   }
 }
-
