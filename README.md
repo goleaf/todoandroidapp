@@ -5,11 +5,13 @@ A production-ready universal TODO application built with Flutter (Dart) that run
 ## Features
 
 - ✅ **Full CRUD operations** - Create, read, update, and delete tasks
+- 🔐 **Authentication** - Register and log in through the bundled Dart server with secure token storage
 - 🔍 **Search and filter** - Filter by All/Active/Completed, search by title or description
 - 📅 **Due dates and priorities** - Set due dates with overdue indicators, prioritize tasks (Low/Medium/High)
 - 🌙 **Theme support** - Light, Dark, and System theme modes with persistence
 - 🌐 **Internationalization** - English and Russian localization with system language detection
 - 💾 **Local database** - Tasks saved to local SQLite database using Drift
+- ☁️ **API backend** - Shelf-based Dart server with SQLite authentication storage
 - 📤 **Import/Export** - Share tasks as JSON for backup or transfer
 - 📱 **Responsive design** - Adaptive layout optimized for all screen sizes
 - ♿ **Accessibility** - Full keyboard navigation and semantic widgets
@@ -28,6 +30,7 @@ A production-ready universal TODO application built with Flutter (Dart) that run
 ### Additional Packages
 - **file_picker** - File selection for import
 - **share_plus** - Share functionality for export
+- **http** - REST client for communicating with the authentication server
 - **flutter_localizations** - Built-in localization
 - **intl** - Date formatting and localization
 
@@ -91,7 +94,16 @@ flutter gen-l10n
 flutter pub run build_runner build --delete-conflicting-outputs
 ```
 
-### 4. Run the app
+### 4. Run the auth server
+
+```bash
+dart pub get --directory server
+dart run --directory server bin/server.dart
+```
+
+The server listens on `http://localhost:8080` and writes user records to `server/data/todo_server.db`. Set the `PORT` environment variable to change the listening port.
+
+### 5. Run the app
 
 ```bash
 # For iOS (macOS only)
@@ -103,6 +115,8 @@ flutter run -d android
 # For Web
 flutter run -d chrome
 ```
+
+When pointing the client at a remote backend, pass `--dart-define=API_BASE_URL=<url>` to `flutter run`.
 
 ## Project Structure
 

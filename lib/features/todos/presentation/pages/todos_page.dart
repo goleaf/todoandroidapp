@@ -8,6 +8,7 @@ import 'package:universal_todo_app/features/todos/presentation/widgets/empty_sta
 import 'package:universal_todo_app/features/todos/presentation/widgets/filters_bar.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/task_item.dart';
 import 'package:universal_todo_app/features/todos/presentation/widgets/toolbar.dart';
+import 'package:universal_todo_app/state/auth_provider.dart';
 
 class TodosPage extends ConsumerStatefulWidget {
   const TodosPage({super.key});
@@ -25,6 +26,16 @@ class _TodosPageState extends ConsumerState<TodosPage> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final todosAsync = ref.watch(displayedTodosProvider);
+    final authState = ref.watch(authStateProvider);
+    final userInitials = authState.user != null && authState.user!.name.isNotEmpty
+        ? authState.user!.name
+            .trim()
+            .split(' ')
+            .where((part) => part.isNotEmpty)
+            .map((part) => part[0].toUpperCase())
+            .take(2)
+            .join()
+        : '';
     final isMobile = isMobile(context);
 
     return Scaffold(
@@ -32,6 +43,27 @@ class _TodosPageState extends ConsumerState<TodosPage> {
         title: Text(l10n.appTitle),
         actions: [
           const Toolbar(),
+          if (authState.user != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: PopupMenuButton<String>(
+                tooltip: 'Account',
+                onSelected: (value) {
+                  if (value == 'logout') {
+                    ref.read(authStateProvider.notifier).logout();
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem<String>(
+                    value: 'logout',
+                    child: const Text('Sign out'),
+                  ),
+                ],
+                child: CircleAvatar(
+                  child: Text(userInitials.isEmpty ? authState.user!.name[0].toUpperCase() : userInitials),
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.settings),
             onPressed: () => context.push('/settings'),

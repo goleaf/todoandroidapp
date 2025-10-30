@@ -61,3 +61,6 @@ Thumbs.db
 
 # Coverage
 coverage/
+
+# Server runtime artifacts
+server/data/*.db
