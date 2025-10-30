@@ -13,6 +13,8 @@ class App extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
     final locale = ref.watch(localeProvider);
 
+    final router = ref.watch(appRouterProvider);
+
     return MaterialApp.router(
       title: 'Universal TODO App',
       theme: AppTheme.light(),
@@ -21,7 +23,7 @@ class App extends ConsumerWidget {
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      routerConfig: goRouter,
+      routerConfig: router,
     );
   }
 }
